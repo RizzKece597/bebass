@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIZZ STORE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Pacifico&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Montserrat', sans-serif; }
+  body, html { height:100%; overflow-x:hidden; background:black; }
+
+  #beranda, #store { width:100%; height:100%; position:relative; transition:opacity 1s ease; }
+  video#bg-video, video#store-video {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    z-index:-2;
+  }
+  canvas#visualizer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:-1; }
+
+  #store-overlay {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,20,0.6);
+    z-index:-1;
+  }
+
+  .centered { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; color:white; text-shadow:2px 2px 10px black; animation: fadeIn 2s ease; }
+  .btn { padding:15px 30px; margin-top:20px; background:#ff3b3f; border:none; border-radius:10px; color:white; font-size:20px; cursor:pointer; transition:0.3s; box-shadow:0 0 20px #ff3b3f, 0 0 40px #ff3b3f, 0 0 60px #ff3b3f; }
+  .btn:hover { background:#e03134; transform:scale(1.1) rotateX(5deg) rotateY(5deg); box-shadow:0 0 30px #ff3b3f, 0 0 60px #ff3b3f, 0 0 90px #ff3b3f; }
+
+  #store { display:none; color:white; padding:20px; overflow-y:auto; perspective:1200px; }
+  .product { margin:30px auto; text-align:center; animation: fadeIn 2s ease; transform-style: preserve-3d; cursor:pointer; transition: transform 0.5s, box-shadow 0.5s; }
+  .product img { width:300px; border-radius:15px; transition:0.5s; box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff; }
+  .product img:hover { transform: scale(1.1) rotateY(15deg) rotateX(15deg); box-shadow:0 0 20px #0ff, 0 0 40px #0ff, 0 0 60px #0ff; }
+
+  .payment-info { display:none; margin:15px 0; font-size:18px; line-height:1.5; background:rgba(0,0,0,0.8); padding:15px; border-radius:10px; box-shadow:0 0 20px #ff3b3f, 0 0 40px #ff3b3f; white-space:pre-line; }
+  .qris { display:none; margin:15px 0; }
+  .qris img { width:250px; border-radius:10px; box-shadow:0 0 15px #0ff, 0 0 30px #0ff; }
+  .qris button { background:#0ff; color:black; font-size:18px; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; margin-top:10px; box-shadow:0 0 20px #0ff,0 0 40px #0ff; }
+  .qris button:hover { background:#00cccc; transform:scale(1.05); }
+
+  .notif { background:rgba(0,0,0,0.8); padding:15px; margin:10px 0; border-radius:10px; text-align:center; font-family:'Pacifico', cursive; font-size:18px; animation: bounce 1.5s infinite alternate; }
+
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+  @keyframes bounce { from {transform:translateY(0);} to {transform:translateY(-10px);} }
+
+  @media(max-width:768px){
+    .product img { width:80%; }
+    .btn { width:70%; font-size:18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUDIO -->
+<audio autoplay loop id="bg-audio">
+  <source src="https://files.catbox.moe/578sx2.mp3" type="audio/mpeg">
+</audio>
+
+<!-- VISUALIZER -->
+<canvas id="visualizer"></canvas>
+
+<!-- BERANDA -->
+<div id="beranda">
+  <video id="bg-video" autoplay muted loop>
+    <source src="https://files.catbox.moe/f7wwz7.mp4" type="video/mp4">
+  </video>
+  <div class="centered">
+    <h1 style="font-family:'Pacifico', cursive; font-size:50px; color:#0ff; text-shadow:0 0 10px #0ff,0 0 20px #0ff;">HOLLA SELAMAT DATANG DI RIZZ STORE</h1>
+    <button class="btn" onclick="openStore()">MASUK STORE</button>
+  </div>
+</div>
+
+<!-- STORE -->
+<div id="store">
+  <video id="store-video" autoplay muted loop>
+    <source src="https://files.catbox.moe/f7wwz7.mp4" type="video/mp4">
+  </video>
+  <div id="store-overlay"></div>
+
+  <div class="notif">
+    JIKA SUDAH TRX PENCET SAJA DOWNLOAD QRIS NANTI AKAN LANGSUNG KE TELE
+  </div>
+  <div id="products"></div>
+</div>
+
+<script>
+// DATA PRODUK
+const produkList = [  
+  {  
+    nama: "Reseller Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Grup Resmi Reseller  
+- Free Update Permanen`  
+  },  
+  {  
+    nama: "Partner Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Grup Resmi Partner  
+- Free Update Permanen  
+- Bisa Open Reseller`  
+  },  
+  {  
+    nama: "Moderator Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Grup Resmi Moderator  
+- Free Update Permanen  
+- Bisa Open Reseller  
+- Bisa Open Partner`  
+  },  
+  {  
+    nama: "CEO Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Grup Resmi CEO  
+- Free Update Permanen  
+- Bisa Open Reseller  
+- Bisa Open Partner  
+- Bisa Open Moderator`  
+  },  
+  {  
+    nama: "Owner Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Grup Resmi Owner  
+- Free Update Permanen  
+- Bisa Open Reseller  
+- Bisa Open Partner  
+- Bisa Open Moderator  
+- Bisa Open CEO`  
+  },  
+  {  
+    nama: "SVIP Always Prime",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `- Bisa Jual Script Lagi  
+- Masuk Semua Grup Resmi  
+- Bisa Add Token Sendiri  
+- Free Update Permanen  
+- Akses Database  
+- Bisa Open Reseller, Partner, CEO, Owner  
+- Nama Masuk Thanks To`  
+  },  
+  {  
+    nama: "Partner Pribadi Rizz Benefit",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `Harga: 50K (4 Orang)  
+
+Benefit:  
+- Free PT Script Always Prime  
+- Selalu Dapet Func & Base  
+- Diajari Add Func  
+- Free Script AddToken  
+- Dikasih Bimbingan & Buyer  
+- Admin Room Public  
+- Free Akses Bot Jasher  
+- Dibantu Naik Nama + Promosi Harian  
+- Dll`  
+  },  
+  {  
+    nama: "T.Kanan Pribadi Rizz Benefit",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `Harga: 150K (2 Orang)  
+
+Benefit:  
+- Free SVIP Script Always Prime  
+- Selalu Dapet Func & Base (Tele/WA)  
+- Diajari Add Func  
+- Free Script AddToken  
+- Free Script No Enc Always Prime (Permanent)  
+- Nama Masuk Thanks To SC Always Prime  
+- Free Script CPanel No Enc via Tele  
+- Admin Room Public  
+- Free Script Bot Jasher  
+- Free Kode HTML + Diajari Cara Jalanin  
+- Full Dorongan + Promosi Harian  
+- Dll`  
+  },  
+  {  
+    nama: "Sc Nika WA",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `Reseller: 50K  
+Partner: 100K  
+T.Kanan: 130K  
+Owner: 150K  
+Moderator: 180K`  
+  },  
+  {  
+    nama: "Sc Nika Tele",  
+    gambar: "https://files.catbox.moe/vwjsu0.jpg",  
+    deskripsi: `Reseller: 60K  
+Partner: 100K  
+Owner: 150K`  
+  }  
+];
+
+// VISUALIZER AUDIO
+const audio = document.getElementById('bg-audio');
+const canvas = document.getElementById('visualizer');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = audioCtx.createAnalyser();
+const source = audioCtx.createMediaElementSource(audio);
+source.connect(analyser);
+analyser.connect(audioCtx.destination);
+analyser.fftSize = 256;
+const bufferLength = analyser.frequencyBinCount;
+const dataArray = new Uint8Array(bufferLength);
+
+function draw(){
+  requestAnimationFrame(draw);
+  analyser.getByteFrequencyData(dataArray);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const barWidth = (canvas.width / bufferLength) * 2.5;
+  let x = 0;
+  for(let i=0;i<bufferLength;i++){
+    const barHeight = dataArray[i];
+    const r = barHeight + 50*(i/bufferLength);
+    const g = 0;
+    const b = 255;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(x, canvas.height-barHeight, barWidth, barHeight);
+    x += barWidth + 1;
+  }
+}
+draw();
+
+function openStore(){
+  document.getElementById('beranda').style.opacity = '0';
+  setTimeout(()=> {
+    document.getElementById('beranda').style.display='none';
+    document.getElementById('store').style.display='block';
+    document.getElementById('store').style.opacity = '1';
+    audio.play();
+  },1000);
+}
+
+// DOWNLOAD QRIS + REDIRECT TELEGRAM
+function downloadAndRedirect(){
+  const link = document.createElement('a');
+  link.href = "https://files.catbox.moe/9c2fpl.jpg";
+  link.download = "QRIS_RizzStore.jpg";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(()=>{
+    window.location.href = "https://t.me/kepomeemwk";
+  },1500);
+}
+
+// GENERATE PRODUK
+const productContainer = document.getElementById('products');
+produkList.forEach((produk) => {
+  const div = document.createElement('div');
+  div.className = 'product';
+  div.innerHTML = `
+    <h2 style="margin-bottom:10px; color:#0ff; text-shadow:0 0 10px #0ff, 0 0 20px #0ff;">${produk.nama}</h2>
+    <img src="${produk.gambar}" alt="${produk.nama}">
+    <div class="payment-info">
+      Nomor Dana: <strong>087831721997</strong><br>
+      Atas Nama: <strong>ADITIA MAULANA SAPUTRA</strong><br>
+      ${produk.deskripsi}
+    </div>
+    <div class="qris">
+      <img src="https://files.catbox.moe/9c2fpl.jpg" alt="QRIS">
+      <br>
+      <button onclick="downloadAndRedirect()">Download QRIS & Kirim Bukti</button>
+    </div>
+  `;
+  div.onclick = (e) => {
+    if(e.target.tagName === "BUTTON") return;
+    const payment = div.querySelector('.payment-info');
+    const qris = div.querySelector('.qris');
+    if(payment.style.display === 'block'){
+      payment.style.display='none';
+      qris.style.display='none';
+    } else {
+      document.querySelectorAll('.payment-info').forEach(p=>p.style.display='none');
+      document.querySelectorAll('.qris').forEach(q=>q.style.display='none');
+      payment.style.display='block';
+      qris.style.display='block';
+    }
+  };
+  productContainer.appendChild(div);
+});
+</script>
+
+</body>
+</html>
